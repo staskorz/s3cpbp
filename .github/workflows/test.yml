@@ -1,0 +1,79 @@
+name: Test s3cpbp
+
+on:
+  push:
+    branches: ["*"]
+  pull_request:
+    branches: ["*"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.24"
+
+      - name: Run tests with coverage
+        run: go test ./... -coverprofile=coverage.out
+
+      - name: Display coverage
+        run: go tool cover -func=coverage.out
+
+      - name: Calculate coverage percentage
+        id: coverage
+        run: |
+          COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | tr -d '%')
+          echo "percentage=$COVERAGE" >> $GITHUB_OUTPUT
+          echo "Total coverage: $COVERAGE%"
+
+      - name: Check coverage threshold
+        run: |
+          COVERAGE=${{ steps.coverage.outputs.percentage }}
+          if (( $(echo "$COVERAGE < 70" | bc -l) )); then
+            echo "Code coverage is below 70%"
+            exit 1
+          fi
+
+      - name: Generate HTML coverage report
+        run: go tool cover -html=coverage.out -o coverage.html
+
+      - name: Create Coverage Badge
+        run: |
+          # Get coverage percentage from previous step
+          COVERAGE="${{ steps.coverage.outputs.percentage }}"
+
+          # Determine color based on coverage percentage
+          if (( $(echo "$COVERAGE >= 80" | bc -l) )); then
+            COLOR="green"
+          elif (( $(echo "$COVERAGE >= 70" | bc -l) )); then
+            COLOR="yellow"
+          else
+            COLOR="red"
+          fi
+
+          # Create JSON data for shields.io
+          cat > badge.json << EOF
+          {
+            "schemaVersion": 1,
+            "label": "coverage",
+            "message": "${COVERAGE}%",
+            "color": "${COLOR}"
+          }
+          EOF
+
+          # Update the gist with JSON data
+          curl -X PATCH \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ secrets.GIST_SECRET }}" \
+            -d "{\"files\":{\"s3cpbp-coverage.json\":{\"content\":$(cat badge.json | jq -Rs .)}}}" \
+            https://api.github.com/gists/1200dad041f4eb3300f41fef52c9fda7
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.html

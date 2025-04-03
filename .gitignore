@@ -5,11 +5,15 @@
 *.so
 *.dylib
 
+# Binary in root directory
+/s3cpbp
+
 # Test binary, built with `go test -c`
 *.test
 
 # Output of the go coverage tool
 *.out
+coverage.html
 
 # Dependency directories
 vendor/
@@ -18,7 +22,6 @@ vendor/
 go.work
 
 # Build output
-s3cpbp
 bin/
 build/
 
@@ -39,3 +42,6 @@ Thumbs.db
 # Environment variables
 .env
 .env.local
+
+# Miscellaneous
+COVERAGE_BADGE_SETUP.md
