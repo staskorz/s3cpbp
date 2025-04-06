@@ -55,7 +55,7 @@ jobs:
           path: ./bin/
 
   release:
-    if: github.event_name == 'release'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -69,9 +69,14 @@ jobs:
       - name: Build Release Binaries
         run: make build
 
+      - name: Generate Tag Name
+        id: tag
+        run: echo "tag_name=main-$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_OUTPUT
+
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: ${{ steps.tag.outputs.tag_name }}
           files: |
             ./bin/s3cpbp_linux_amd64
             ./bin/s3cpbp_windows_amd64.exe
