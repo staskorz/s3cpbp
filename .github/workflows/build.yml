@@ -82,3 +82,7 @@ jobs:
             ./bin/s3cpbp_windows_amd64.exe
             ./bin/s3cpbp_darwin_amd64
             ./bin/s3cpbp_darwin_arm64
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
